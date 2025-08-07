@@ -552,12 +552,18 @@ export default function ClientSchoolAdminView({ id }: { id: string }) {
                                 <div>
                                     {school.courses.length > 0 ? (
                                         <>
-                                            <div className="flex justify-start items-center mb-6">
+                                            <div className="flex justify-start items-center gap-4 mb-6">
                                                 <button
                                                     onClick={() => setIsCreateCourseDialogOpen(true)}
                                                     className="px-6 py-3 bg-white text-black text-sm font-medium rounded-full hover:opacity-90 transition-opacity inline-block cursor-pointer"
                                                 >
                                                     Create course
+                                                </button>
+                                                 <button
+                                                    onClick={() => router.push("/role-assessment")}
+                                                    className="px-6 py-3 bg-white text-black text-sm font-medium rounded-full hover:opacity-90 transition-opacity inline-block cursor-pointer"
+                                                >
+                                                    Create Role Based Assessment
                                                 </button>
                                             </div>
 

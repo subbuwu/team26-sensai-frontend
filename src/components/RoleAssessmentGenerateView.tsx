@@ -34,6 +34,7 @@ import {
     CaseStudy,
     AptitudeQuestion
 } from "@/types/assessment";
+import { PulsatingButton } from "./magicui/pulsating-button";
 
 // Session storage key
 const ASSESSMENT_STORAGE_KEY = 'cached_assessment_result';
@@ -76,34 +77,7 @@ export default function RoleAssessmentGenerateView({ slug }: { slug: string }) {
     });
     const [copied, setCopied] = useState<string | null>(null);
 
-    // Load cached assessment on mount
-    useEffect(() => {
-        const loadCachedAssessment = () => {
-            try {
-                const stored = sessionStorage.getItem(ASSESSMENT_STORAGE_KEY);
-                if (stored) {
-                    const data: StoredAssessmentData = JSON.parse(stored);
-                    const now = Date.now();
-                    
-                    // Check if cached data is still valid (24 hours)
-                    if (now < data.timestamp + data.expiresIn) {
-                        setAssessmentResult(data.result);
-                        setSelectedRole(data.result.role_name);
-                        setSelectedSkills(data.result.target_skills);
-                        setSelectedDifficulty(data.result.difficulty_level);
-                    } else {
-                        // Clean expired cache
-                        sessionStorage.removeItem(ASSESSMENT_STORAGE_KEY);
-                    }
-                }
-            } catch (error) {
-                console.error('Failed to load cached assessment:', error);
-                sessionStorage.removeItem(ASSESSMENT_STORAGE_KEY);
-            }
-        };
-
-        loadCachedAssessment();
-    }, []);
+  
 
     // Cache assessment result
     const cacheAssessmentResult = (result: AssessmentResult) => {
@@ -551,7 +525,18 @@ export default function RoleAssessmentGenerateView({ slug }: { slug: string }) {
             </div>
 
             {/* Main Content */}
-            <div className="min-h-screen bg-black text-white">
+            <div className="min-h-screen bg-black text-white relative ">
+               <div className="bg-black/30 backdrop-blur-sm rounded-full p-6 fixed left-1/2 -bottom-6 -translate-x-1/2 -translate-y-1/2 flex items-center gap-4">
+                             <button className=" bg-black cursor-pointer shadow-[inset_0_0_0_2px_#616467] hover:text-black px-6 py-2 rounded-full  font-bold hover:bg-gray-100 transition-all duration-150 dark:text-neutral-200 z-50">
+  Save Changes
+</button>
+ <button className=" bg-black cursor-pointer shadow-[inset_0_0_0_2px_#616467] hover:text-black px-6 py-2 rounded-full  font-bold hover:bg-gray-100 transition-all duration-150 dark:text-neutral-200 z-50">
+  Deploy To Courses
+</button>
+ <button className=" bg-black cursor-pointer shadow-[inset_0_0_0_2px_#616467] hover:text-black px-6 py-2 rounded-full  font-bold hover:bg-gray-100 transition-all duration-150 dark:text-neutral-200 z-50">
+  Share 
+</button>
+               </div>
                 <div className="container mx-auto px-4 py-8 max-w-6xl">
                     
                     {/* Page Header */}
@@ -763,8 +748,8 @@ export default function RoleAssessmentGenerateView({ slug }: { slug: string }) {
                     {assessmentResult && (
                         <div className="space-y-8">
                             {/* Success Header */}
-                            <div className="bg-gradient-to-r from-green-900/20 to-emerald-900/20 border border-green-800/50 rounded-xl p-6">
-                                <div className="flex items-center">
+                            <div className="bg-gradient-to-r from-green-900/20 to-emerald-900/20 border border-green-800/50 rounded-xl p-6 mx-auto max-w-md">
+                                <div className="flex items-center justify-center mx-auto">
                                     <div className="w-12 h-12 bg-green-600/20 rounded-full flex items-center justify-center mr-4">
                                         <Check className="w-6 h-6 text-green-400" />
                                     </div>
@@ -842,7 +827,7 @@ export default function RoleAssessmentGenerateView({ slug }: { slug: string }) {
                                                 <th className="text-left py-4 px-4 text-gray-400 font-medium uppercase tracking-wider">Skill</th>
                                                 <th className="text-center py-4 px-4 text-gray-400 font-medium uppercase tracking-wider">Questions</th>
                                                 <th className="text-center py-4 px-4 text-gray-400 font-medium uppercase tracking-wider">Coverage</th>
-                                                <th className="text-center py-4 px-4 text-gray-400 font-medium uppercase tracking-wider">Quality</th>
+                                                {/* <th className="text-center py-4 px-4 text-gray-400 font-medium uppercase tracking-wider">Quality</th> */}
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -858,25 +843,31 @@ export default function RoleAssessmentGenerateView({ slug }: { slug: string }) {
                                                     </td>
                                                     <td className="py-4 px-4 text-center">
                                                         <div className="flex items-center justify-center space-x-2">
-                                                            <div className="w-12 bg-gray-700 rounded-full h-2 overflow-hidden">
+                                                            {/* <div className="w-12 bg-gray-700 rounded-full h-2 overflow-hidden">
                                                                 <div 
                                                                     className="bg-purple-600 h-2 rounded-full transition-all duration-300"
                                                                     style={{ width: `${coverage.coverage_percentage}%` }}
                                                                 ></div>
-                                                            </div>
+                                                            </div> */}
                                                             <span className="text-purple-400 font-bold text-sm min-w-[3rem]">
                                                                 {coverage.coverage_percentage}%
                                                             </span>
                                                         </div>
                                                     </td>
-                                                    <td className="py-4 px-4 text-center">
+                                                    {/* <td className="py-4 px-4 text-center">
                                                         <span className={`inline-flex items-center px-3 py-1 rounded-lg text-xs font-medium border ${getCoverageQualityColor(coverage.quality)}`}>
                                                             <span className="mr-1">{getCoverageQualityIcon(coverage.quality)}</span>
                                                             {coverage.quality}
                                                         </span>
-                                                    </td>
+                                                    </td> */}
+                                                    
                                                 </tr>
                                             ))}
+                                              <tr className="border-t border-b border-gray-800/50 last:border-b-0 hover:bg-gray-800/20 transition-colors">
+                                                    <td className="py-4 px-4 font-semibold text-base">Total</td>
+                                                    <td className="py-4 px-4 text-center font-semibold text-base">{assessmentResult.mcqs.length + assessmentResult.saqs.length } </td>
+                                                    <td className="py-4 px-4 text-center font-semibold text-base">{assessmentResult.skill_coverage.reduce((coverage,val) => coverage + val.coverage_percentage,0).toFixed(2)}%</td>
+                                            </tr>
                                         </tbody>
                                     </table>
                                 </div>
@@ -1024,7 +1015,7 @@ export default function RoleAssessmentGenerateView({ slug }: { slug: string }) {
                             </div>
 
                             {/* Action Buttons */}
-                            <div className="flex flex-wrap gap-4 justify-center">
+                            {/* <div className="flex flex-wrap gap-4 justify-center">
                                 <button
                                     onClick={() => {
                                         router.push(`/assessments/${assessmentResult.assessment_id}`);
@@ -1094,7 +1085,7 @@ export default function RoleAssessmentGenerateView({ slug }: { slug: string }) {
                                 >
                                     Generate Another
                                 </button>
-                            </div>
+                            </div> */}
                         </div>
                     )}
                 </div>

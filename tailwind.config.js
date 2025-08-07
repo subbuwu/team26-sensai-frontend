@@ -98,6 +98,10 @@ module.exports = {
           "80%": { width: "85%" },
           "100%": { width: "100%" }
         },
+        pulse: {
+          "0%, 100%": { boxShadow: "0 0 0 0 var(--pulse-color)" },
+          "50%": { boxShadow: "0 0 0 8px var(--pulse-color)" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
@@ -106,7 +110,8 @@ module.exports = {
         "celebration-reveal": "celebration-reveal 3.5s ease-in-out forwards",
         "gradient-x": "gradient-x 3s ease infinite",
         "loadingBar": "loadingBar 4s cubic-bezier(0.4, 0, 0.2, 1) infinite",
-        "question-highlight": "3s ease-in-out forwards"
+        "question-highlight": "3s ease-in-out forwards",
+        "pulse": "pulse var(--duration) ease-out infinite",
       },
     },
   },

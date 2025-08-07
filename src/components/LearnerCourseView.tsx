@@ -1217,7 +1217,7 @@ export default function LearnerCourseView({
                                             <>
                                                 <DynamicLearnerQuizView
                                                     questions={activeItem.questions || []}
-                                                    readOnly={true}
+
                                                     viewOnly={viewOnly}
                                                     currentQuestionId={activeQuestionId || undefined}
                                                     onQuestionChange={activateQuestion}

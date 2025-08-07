@@ -23,6 +23,7 @@ import { QuizQuestion, QuizQuestionConfig } from "../../../../../../types/quiz";
 
 // Import the CreateCohortDialog
 import CreateCohortDialog from '@/components/CreateCohortDialog';
+import { useSession } from "next-auth/react";
 
 interface CourseDetails {
     id: number;
@@ -32,6 +33,7 @@ interface CourseDetails {
 
 // Default configuration for new questions
 const defaultQuestionConfig: QuizQuestionConfig = {
+    title : "",
     inputType: 'text',
     responseType: 'chat',
     questionType: 'objective',
@@ -43,6 +45,7 @@ const defaultQuestionConfig: QuizQuestionConfig = {
 export default function CreateCourse() {
     const router = useRouter();
     const params = useParams();
+    const { data : session } = useSession();
     const schoolId = params.id as string;
     const courseId = params.courseId as string;
     const [schoolSlug, setSchoolSlug] = useState<string>('');
@@ -133,6 +136,7 @@ export default function CreateCourse() {
 
     const [selectedCohortForSettings, setSelectedCohortForSettings] = useState<any | null>(null);
 
+    const [showCreateAssessment, setShowCreateAssessment] = useState(false);
     // Update the refs whenever the state changes
     useEffect(() => {
         isGeneratingCourseRef.current = isGeneratingCourse;
@@ -223,6 +227,7 @@ export default function CreateCourse() {
                 if (response.ok) {
                     const schoolData = await response.json();
                     setSchoolSlug(schoolData.slug);
+
                 }
             } catch (error) {
                 console.error("Error fetching school details:", error);

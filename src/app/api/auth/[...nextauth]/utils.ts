@@ -2,7 +2,7 @@
  * Server-side utility functions for authentication
  */
 
-interface UserData {
+export interface UserData {
   email: string;
   given_name?: string;
   family_name?: string;
