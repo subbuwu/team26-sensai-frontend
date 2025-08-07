@@ -34,6 +34,7 @@ export function Header({
     const [isSchoolPickerOpen, setIsSchoolPickerOpen] = useState(false);
     const [mobileActionsOpen, setMobileActionsOpen] = useState(false);
     const profileMenuRef = useRef<HTMLDivElement>(null);
+    
     const cohortDropdownRef = useRef<HTMLDivElement>(null);
     const mobileActionsRef = useRef<HTMLDivElement>(null);
     const { schools, isLoading } = useSchools();

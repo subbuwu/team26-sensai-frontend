@@ -231,7 +231,7 @@ export default function ClientSchoolLearnerView({ slug }: { slug: string }) {
             return;
         }
         setActiveCourseIndex(index);
-        const modules = transformCourseToModules(courses[index], activeCohort?.joined_at);
+        const modules = transformCourseToModules(courses[index]);
         setCourseModules(modules);
 
         // Update URL with course ID
