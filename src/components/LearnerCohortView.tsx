@@ -51,8 +51,11 @@ export default function LearnerCohortView({
     activeCourseIndex = 0,
 }: LearnerCohortViewProps) {
     // Add state to manage completed tasks and questions
+
     const [localCompletedTaskIds, setLocalCompletedTaskIds] = useState<Record<string, boolean>>(completedTaskIds);
     const [localCompletedQuestionIds, setLocalCompletedQuestionIds] = useState<Record<string, Record<string, boolean>>>(completedQuestionIds);
+    const [assessments, setAssessments] = useState<any[]>([]);
+const [isLoadingAssessments, setIsLoadingAssessments] = useState(false);
 
     // State to track whether to show the TopPerformers component
     const [showTopPerformers, setShowTopPerformers] = useState<boolean>(true);
@@ -86,6 +89,34 @@ export default function LearnerCohortView({
     const lastIncrementDateRef = useRef<string | null>(null);
     const lastStreakCountRef = useRef<number>(streakDays);
     const isInitialLoadRef = useRef(true);
+
+    const fetchAssessments = useCallback(async (courseId: number) => {
+    if (!courseId) return;
+    
+    setIsLoadingAssessments(true);
+    try {
+        // role_assessment/course/1/assessments
+        const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/role_assessment/course/${courseId}/assessments`);
+        if (response.ok) {
+            const data = await response.json();
+            setAssessments(data);
+        } else {
+            setAssessments([]);
+        }
+    } catch (error) {
+        console.error('Error fetching assessments:', error);
+        setAssessments([]);
+    } finally {
+        setIsLoadingAssessments(false);
+    }
+}, []);
+
+    useEffect(() => {
+    const activeCourse = courses[activeCourseIndex];
+    if (activeCourse?.id) {
+        fetchAssessments(activeCourse.id);
+    }
+}, [activeCourseIndex, courses, fetchAssessments]);
 
     // Load persisted values from localStorage when component mounts
     useEffect(() => {
@@ -305,6 +336,86 @@ export default function LearnerCohortView({
         };
     }, []);
 
+    const AssessmentsSection = () => {
+    if (isLoadingAssessments) {
+        return (
+            <div className="mt-8">
+                <h2 className="text-xl md:text-2xl font-light text-white mb-4">Assessments</h2>
+                <div className="flex justify-center items-center py-8">
+                    <div className="w-6 h-6 border-t-2 border-b-2 border-white rounded-full animate-spin"></div>
+                </div>
+            </div>
+        );
+    }
+
+    if (!assessments || assessments.length === 0) {
+        return null; // Don't show section if no assessments
+    }
+
+    return (
+        <div className="mt-8">
+            <h2 className="text-xl md:text-2xl font-light text-white mb-4">Assessments</h2>
+            <div className="flex gap-3 overflow-x-auto pb-4 scrollbar-hide">
+                {assessments.map((assessment) => (
+                    <a
+                        key={assessment.assessment_id}
+                        href={`/role-assessment/preview/${assessment.assessment_id}`}
+                        className="flex-shrink-0 w-72 bg-gray-900/50 rounded-lg border border-gray-800 hover:border-gray-700 hover:bg-gray-900/70 transition-all duration-200 p-4 group"
+                    >
+                        <div className="space-y-3">
+                            {/* Header with role name and difficulty */}
+                            <div className="flex items-center justify-between">
+                                <h3 className="text-base font-medium text-white group-hover:text-blue-400 transition-colors truncate">
+                                    {assessment.role_name}
+                                </h3>
+                                <span className={`px-2 py-1 rounded-full text-xs font-medium flex-shrink-0 ml-2 ${
+                                    assessment.difficulty_level === 'hard' 
+                                        ? 'bg-red-500/20 text-red-400' 
+                                        : assessment.difficulty_level === 'medium'
+                                        ? 'bg-yellow-500/20 text-yellow-400'
+                                        : 'bg-green-500/20 text-green-400'
+                                }`}>
+                                    {assessment.difficulty_level.charAt(0).toUpperCase() + assessment.difficulty_level.slice(1)}
+                                </span>
+                            </div>
+                            
+                            {/* Skills */}
+                            <div className="flex flex-wrap gap-1">
+                                {assessment.target_skills.slice(0, 3).map((skill : string, index : number) => (
+                                    <span
+                                        key={index}
+                                        className="px-2 py-1 bg-blue-500/20 text-blue-400 rounded text-xs"
+                                    >
+                                        {skill}
+                                    </span>
+                                ))}
+                                {assessment.target_skills.length > 3 && (
+                                    <span className="px-2 py-1 bg-gray-700/50 text-gray-400 rounded text-xs">
+                                        +{assessment.target_skills.length - 3}
+                                    </span>
+                                )}
+                            </div>
+                            
+                            {/* Stats */}
+                            <div className="flex items-center justify-between text-xs text-gray-400">
+                                <div className="flex items-center gap-3">
+                                    <span>{assessment.total_questions}Q</span>
+                                    <span>{assessment.estimated_duration_minutes}m</span>
+                                </div>
+                                <div className="text-gray-400 group-hover:text-white transition-colors">
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                    </svg>
+                                </div>
+                            </div>
+                        </div>
+                    </a>
+                ))}
+            </div>
+        </div>
+    );
+};
+
     return (
         <div className="bg-black min-h-screen pb-16 lg:pb-0" role="main">
             {courseTitle && (
@@ -390,6 +501,8 @@ export default function LearnerCohortView({
                             onQuestionComplete={handleQuestionComplete}
                             onDialogClose={handleDialogClose}
                         />
+
+                         <AssessmentsSection />
                     </div>
                 </div>
 

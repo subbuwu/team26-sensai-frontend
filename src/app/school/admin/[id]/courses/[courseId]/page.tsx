@@ -41,6 +41,17 @@ const defaultQuestionConfig: QuizQuestionConfig = {
     linkedMaterialIds: [],
 };
 
+type Assessment = {
+        assessment_id: string,
+        role_name: string,
+        target_skills: string[],
+        difficulty_level: "easy" | "medium" | "hard",
+        total_questions: number,
+        estimated_duration_minutes: number,
+        position: number,
+        deployed_at: string,
+    }
+
 
 export default function CreateCourse() {
     const router = useRouter();
@@ -70,6 +81,9 @@ export default function CreateCourse() {
     const [cohortSearchQuery, setCohortSearchQuery] = useState('');
     const [filteredCohorts, setFilteredCohorts] = useState<any[]>([]);
     const [cohortError, setCohortError] = useState<string | null>(null);
+    const [assessments, setAssessments] = useState<Assessment[]>([]);
+    const [isLoadingAssessments, setIsLoadingAssessments] = useState(false);
+
     // Add state for course cohorts
     const [courseCohorts, setCourseCohorts] = useState<any[]>([]);
     const [isLoadingCourseCohorts, setIsLoadingCourseCohorts] = useState(false);
@@ -149,6 +163,21 @@ export default function CreateCourse() {
     useEffect(() => {
         generatedTasksCountRef.current = generatedTasksCount;
     }, [generatedTasksCount]);
+
+    const fetchAssessments = async () => {
+    setIsLoadingAssessments(true);
+    try {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/role_assessment/course/${courseId}/assessments`);
+        if (response.ok) {
+            const data = await response.json();
+            setAssessments(data);
+        }
+    } catch (error) {
+        console.error('Error fetching assessments:', error);
+    } finally {
+        setIsLoadingAssessments(false);
+    }
+};
 
     // Extract fetchCourseDetails as a standalone function
     const fetchCourseDetails = async () => {
@@ -236,6 +265,7 @@ export default function CreateCourse() {
 
         fetchSchoolDetails();
     }, [courseId]);
+    
 
     // Check for dark mode
     useEffect(() => {
@@ -292,6 +322,12 @@ export default function CreateCourse() {
             window.removeEventListener('keydown', handleEscKey);
         };
     }, [isDialogOpen]);
+
+    useEffect(() => {
+    if (courseId) {
+        fetchAssessments();
+    }
+}, [courseId]);
 
     // Handle clicks outside of the dropdown for the publish dialog
 
@@ -1824,7 +1860,98 @@ export default function CreateCourse() {
     const handleCloseSettingsDialog = () => {
         setSelectedCohortForSettings(null);
     };
+    
+    const AssessmentsSection = () => {
+    if (isLoadingAssessments) {
+        return (
+            <div className="mt-12">
+                <h2 className="text-2xl font-light text-white mb-6">Linked Assessments</h2>
+                <div className="flex justify-center items-center py-8">
+                    <div className="w-8 h-8 border-t-2 border-b-2 border-white rounded-full animate-spin"></div>
+                </div>
+            </div>
+        );
+    }
 
+    if (!assessments || assessments.length === 0) {
+        return (
+            <div className="mt-12">
+                <h2 className="text-2xl font-light text-white mb-6">Linked Assessments</h2>
+                <div className="bg-gray-900/50 rounded-lg border border-gray-800 p-8 text-center mb-4">
+                    <p className="text-gray-400">No assessments linked to this course yet.</p>
+                    <button className="bg-blue-500 text-white px-4 py-2 rounded-md mt-1 cursor-pointer" onClick={() => router.push("/role-assessment")}>
+                        Create an Assessment
+                    </button>
+                </div>
+            </div>
+        );
+    }
+
+    return (
+    <div className="mt-12">
+        <h2 className="text-2xl font-light text-white mb-6">Linked Assessments</h2>
+        <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide">
+            {assessments.map((assessment) => (
+                <Link
+                    key={assessment.assessment_id}
+                    href={`/role-assessment/${assessment.assessment_id}`}
+                    className="flex-shrink-0 w-80 bg-gray-900/50 rounded-lg border border-gray-800 hover:border-gray-700 hover:bg-gray-900/70 transition-all duration-200 p-4 group"
+                >
+                    <div className="space-y-3">
+                        {/* Header with role name and difficulty */}
+                        <div className="flex items-center justify-between">
+                            <h3 className="text-lg font-medium text-white group-hover:text-blue-400 transition-colors truncate">
+                                {assessment.role_name}
+                            </h3>
+                            <span className={`px-2 py-1 rounded-full text-xs font-medium flex-shrink-0 ml-2 ${
+                                assessment.difficulty_level === 'hard' 
+                                    ? 'bg-red-500/20 text-red-400' 
+                                    : assessment.difficulty_level === 'medium'
+                                    ? 'bg-yellow-500/20 text-yellow-400'
+                                    : 'bg-green-500/20 text-green-400'
+                            }`}>
+                                {assessment.difficulty_level.charAt(0).toUpperCase() + assessment.difficulty_level.slice(1)}
+                            </span>
+                        </div>
+                        
+                        {/* Skills */}
+                        <div className="flex flex-wrap gap-1">
+                            {assessment.target_skills.slice(0, 3).map((skill, index) => (
+                                <span
+                                    key={index}
+                                    className="px-2 py-1 bg-blue-500/20 text-blue-400 rounded text-xs"
+                                >
+                                    {skill}
+                                </span>
+                            ))}
+                            {assessment.target_skills.length > 3 && (
+                                <span className="px-2 py-1 bg-gray-700/50 text-gray-400 rounded text-xs">
+                                    +{assessment.target_skills.length - 3}
+                                </span>
+                            )}
+                        </div>
+                        
+                        {/* Stats */}
+                        <div className="flex items-center justify-between text-xs text-gray-400">
+                            <div className="flex items-center gap-3">
+                                <span>{assessment.total_questions}Q</span>
+                                <span>{assessment.estimated_duration_minutes}m</span>
+                            </div>
+                            <div className="text-gray-400 group-hover:text-white transition-colors">
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+                </Link>
+            ))}
+        </div>
+    </div>
+);
+};
+
+    
     return (
         <div className="min-h-screen bg-black">
             {/* Use the reusable Header component with showCreateCourseButton set to false */}
@@ -1836,6 +1963,8 @@ export default function CreateCourse() {
 
                 </div>
             )}
+
+      
 
             {/* Show spinner when loading */}
             {isLoading ? (
@@ -1943,6 +2072,8 @@ export default function CreateCourse() {
                                 )}
                             </div>
                         </div>
+
+                              <AssessmentsSection/>
 
                         <button
                             onClick={() => addModule(courseId, schoolId, modules, setModules, setActiveModuleId, lastUsedColorIndex, setLastUsedColorIndex)}
@@ -2228,3 +2359,4 @@ export default function CreateCourse() {
         </div>
     );
 }
+
