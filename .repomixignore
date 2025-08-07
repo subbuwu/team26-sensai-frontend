@@ -1,0 +1,27 @@
+# Ignore dependencies and build output
+node_modules/
+dist/
+.next/
+out/
+coverage/
+build/
+
+# Ignore tests and public assets
+test/
+src/__tests__/
+public/
+eslint.config.mjs
+jest.setup.js
+jest.config.js
+postcss.config.mjs
+src/app/globals.css
+repomix.config.json
+tsconfig.jest.json
+tsconfig.json
+
+# Ignore config, temp, and local files
+*.log
+TODO*
+.cursor/
+*.local
+
