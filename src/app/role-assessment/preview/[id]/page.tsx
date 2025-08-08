@@ -10,10 +10,7 @@ import {
     Target,
     BookOpen,
     AlertCircle,
-    Check,
     Play,
-    User,
-    Users
 } from "lucide-react";
 import { AssessmentResult } from "@/types/assessment";
 
@@ -25,7 +22,6 @@ export default function AssessmentPreviewPage() {
     const [assessment, setAssessment] = useState<AssessmentResult | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const [isStarting, setIsStarting] = useState(false);
     const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
         mcqs: true,
         saqs: false,
@@ -33,16 +29,9 @@ export default function AssessmentPreviewPage() {
         aptitude: false,
     });
 
-    // Add state for assessment start options
-    const [selectedCohort, setSelectedCohort] = useState<number | null>(null);
-    const [selectedCourse, setSelectedCourse] = useState<number | null>(null);
-    const [availableCohorts, setAvailableCohorts] = useState<Array<{id: number, name: string}>>([]);
-    const [availableCourses, setAvailableCourses] = useState<Array<{id: number, name: string}>>([]);
-
     useEffect(() => {
         if (assessmentId) {
             fetchAssessment();
-            fetchUserOptions();
         }
     }, [assessmentId]);
 
@@ -66,60 +55,8 @@ export default function AssessmentPreviewPage() {
         }
     };
 
-    const fetchUserOptions = async () => {
-        try {
-            // Fetch user's available cohorts and courses
-            // This endpoint would need to be implemented in your backend
-            const [cohortsResponse, coursesResponse] = await Promise.all([
-                fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/user/cohorts`),
-                fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/user/courses`)
-            ]);
-
-            if (cohortsResponse.ok) {
-                const cohorts = await cohortsResponse.json();
-                setAvailableCohorts(cohorts);
-            }
-
-            if (coursesResponse.ok) {
-                const courses = await coursesResponse.json();
-                setAvailableCourses(courses);
-            }
-        } catch (error) {
-            console.error('Error fetching user options:', error);
-        }
-    };
-
-    const handleStartAssessment = async () => {
-        if (!assessment) return;
-
-        try {
-            setIsStarting(true);
-            
-            // Convert role assessment to assessment task format
-            const taskId = assessment.assessment_id; // Assuming the role assessment ID can be used as task ID
-            
-            // Build the URL with query parameters
-            const params = new URLSearchParams({
-                taskId: taskId.toString(),
-            });
-
-            if (selectedCohort) {
-                params.append('cohortId', selectedCohort.toString());
-            }
-
-            if (selectedCourse) {
-                params.append('courseId', selectedCourse.toString());
-            }
-
-            // Navigate to the assessment taking page
-            router.push(`/assessment/take?${params.toString()}`);
-
-        } catch (error) {
-            console.error('Error starting assessment:', error);
-            setError('Failed to start assessment');
-        } finally {
-            setIsStarting(false);
-        }
+    const handleTakeAssessment = () => {
+        router.push(`/assessment/${assessmentId}`);
     };
 
     const toggleSection = (section: string) => {
@@ -182,7 +119,7 @@ export default function AssessmentPreviewPage() {
                     </p>
 
                     {/* Stats */}
-                    <div className="flex items-center gap-6 text-sm text-gray-400 mb-6">
+                    <div className="flex items-center gap-6 text-sm text-gray-400 mb-8">
                         <div className="flex items-center gap-2">
                             <BookOpen className="w-4 h-4" />
                             <span>{assessment.total_questions} questions</span>
@@ -197,66 +134,17 @@ export default function AssessmentPreviewPage() {
                         </div>
                     </div>
 
-                    {/* Start Assessment Section */}
-                    <div className="bg-gray-900 border border-gray-800 rounded-lg p-6 mb-8">
-                        <h2 className="text-lg font-medium text-white mb-4">Start Assessment</h2>
-                        
-                        {/* Optional selections */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                            {availableCohorts.length > 0 && (
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-400 mb-2">
-                                        <Users className="w-4 h-4 inline mr-1" />
-                                        Cohort (optional)
-                                    </label>
-                                    <select
-                                        value={selectedCohort || ''}
-                                        onChange={(e) => setSelectedCohort(e.target.value ? parseInt(e.target.value) : null)}
-                                        className="w-full bg-gray-800 border border-gray-700 text-white rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                    >
-                                        <option value="">Select a cohort</option>
-                                        {availableCohorts.map(cohort => (
-                                            <option key={cohort.id} value={cohort.id}>
-                                                {cohort.name}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </div>
-                            )}
-
-                            {availableCourses.length > 0 && (
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-400 mb-2">
-                                        <BookOpen className="w-4 h-4 inline mr-1" />
-                                        Course (optional)
-                                    </label>
-                                    <select
-                                        value={selectedCourse || ''}
-                                        onChange={(e) => setSelectedCourse(e.target.value ? parseInt(e.target.value) : null)}
-                                        className="w-full bg-gray-800 border border-gray-700 text-white rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                    >
-                                        <option value="">Select a course</option>
-                                        {availableCourses.map(course => (
-                                            <option key={course.id} value={course.id}>
-                                                {course.name}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </div>
-                            )}
-                        </div>
-
+                    {/* CTA Button */}
+                    <div className="text-center mb-8">
                         <button
-                            onClick={handleStartAssessment}
-                            disabled={isStarting}
-                            className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white px-6 py-3 rounded-md font-medium flex items-center gap-2 transition-colors"
+                            onClick={handleTakeAssessment}
+                            className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-lg font-medium text-lg flex items-center gap-3 mx-auto transition-colors"
                         >
-                            <Play className="w-4 h-4" />
-                            {isStarting ? 'Starting...' : 'Start Assessment'}
+                            <Play className="w-5 h-5" />
+                            Take Assessment
                         </button>
-                        
                         <p className="text-sm text-gray-500 mt-2">
-                            Once started, you'll have {assessment.estimated_duration_minutes} minutes to complete the assessment.
+                            Complete the assessment in {assessment.estimated_duration_minutes} minutes
                         </p>
                     </div>
                 </div>
@@ -276,7 +164,7 @@ export default function AssessmentPreviewPage() {
                     </div>
                 </div>
 
-                {/* Question Sections */}
+                {/* Question Sections Preview (No Answers) */}
                 <div className="space-y-4">
                     {/* MCQs Section */}
                     {assessment.mcqs && assessment.mcqs.length > 0 && (
@@ -293,34 +181,24 @@ export default function AssessmentPreviewPage() {
                             
                             {expandedSections.mcqs && (
                                 <div className="p-4 bg-black space-y-4">
-                                    {assessment.mcqs.map((q, idx) => (
+                                    {assessment.mcqs.slice(0, 3).map((q, idx) => (
                                         <div key={q.id} className="pb-4 border-b border-gray-800 last:border-0">
-                                            <p className="text-white mb-3 text-lg">
+                                            <p className="text-white mb-3">
                                                 {idx + 1}. {q.question}
                                             </p>
                                             <div className="space-y-2 ml-4">
                                                 {q.options.map((option, optIdx) => (
-                                                    <div
-                                                        key={optIdx}
-                                                        className={`flex items-start gap-3 ${
-                                                            optIdx === q.correct_answer ? 'text-green-400' : 'text-gray-400'
-                                                        }`}
-                                                    >
+                                                    <div key={optIdx} className="flex items-start gap-3 text-gray-400">
                                                         <span className="font-medium">{String.fromCharCode(65 + optIdx)}.</span>
                                                         <span className="flex-1">{option}</span>
-                                                        {optIdx === q.correct_answer && (
-                                                            <Check className="w-4 h-4 mt-0.5" />
-                                                        )}
                                                     </div>
                                                 ))}
                                             </div>
-                                            {q.explanation && (
-                                                <div className="mt-3 ml-4 p-3 bg-gray-900 border-l-2 border-gray-700 rounded">
-                                                    <p className="text-sm text-gray-400">{q.explanation}</p>
-                                                </div>
-                                            )}
                                         </div>
                                     ))}
+                                    {assessment.mcqs.length > 3 && (
+                                        <p className="text-gray-500 text-center">... and {assessment.mcqs.length - 3} more questions</p>
+                                    )}
                                 </div>
                             )}
                         </div>
@@ -341,17 +219,16 @@ export default function AssessmentPreviewPage() {
                             
                             {expandedSections.saqs && (
                                 <div className="p-4 bg-black space-y-4">
-                                    {assessment.saqs.map((q, idx) => (
+                                    {assessment.saqs.slice(0, 2).map((q, idx) => (
                                         <div key={q.id} className="pb-4 border-b border-gray-800 last:border-0">
-                                            <p className="text-white mb-3 text-lg">
+                                            <p className="text-white mb-3">
                                                 {idx + 1}. {q.question}
                                             </p>
-                                            <div className="ml-4 p-3 bg-gray-900 border-l-2 border-gray-700 rounded">
-                                                <p className="text-sm text-gray-400 font-medium mb-1">Sample Answer:</p>
-                                                <p className="text-gray-300">{q.sample_answer}</p>
-                                            </div>
                                         </div>
                                     ))}
+                                    {assessment.saqs.length > 2 && (
+                                        <p className="text-gray-500 text-center">... and {assessment.saqs.length - 2} more questions</p>
+                                    )}
                                 </div>
                             )}
                         </div>
@@ -374,17 +251,11 @@ export default function AssessmentPreviewPage() {
                                         {assessment.case_study.title}
                                     </h4>
                                     <p className="text-gray-300 mb-4 leading-relaxed">
-                                        {assessment.case_study.scenario}
+                                        {assessment.case_study.scenario.substring(0, 200)}...
                                     </p>
-                                    <div className="space-y-2">
-                                        <p className="text-sm font-medium text-gray-400 mb-2">Questions:</p>
-                                        {assessment.case_study.questions.map((question, index) => (
-                                            <div key={index} className="ml-4 flex items-start gap-3 text-gray-300">
-                                                <span className="font-medium">{index + 1}.</span>
-                                                <span>{question}</span>
-                                            </div>
-                                        ))}
-                                    </div>
+                                    <p className="text-gray-500">
+                                        {assessment.case_study.questions.length} questions included
+                                    </p>
                                 </div>
                             )}
                         </div>
@@ -405,31 +276,31 @@ export default function AssessmentPreviewPage() {
                             
                             {expandedSections.aptitude && (
                                 <div className="p-4 bg-black space-y-4">
-                                    {assessment.aptitude_questions.map((q, idx) => (
+                                    {assessment.aptitude_questions.slice(0, 2).map((q, idx) => (
                                         <div key={q.id} className="pb-4 border-b border-gray-800 last:border-0">
-                                            <p className="text-white mb-3 text-lg">
+                                            <p className="text-white mb-3">
                                                 {idx + 1}. {q.question}
                                             </p>
-                                            <div className="ml-4">
-                                                <p className="text-green-400 mb-2">
-                                                    Answer: {q.correct_answer}
-                                                </p>
-                                                {q.explanation && (
-                                                    <div className="p-3 bg-gray-900 border-l-2 border-gray-700 rounded">
-                                                        <p className="text-sm text-gray-400">{q.explanation}</p>
-                                                    </div>
-                                                )}
-                                            </div>
                                         </div>
                                     ))}
+                                    {assessment.aptitude_questions.length > 2 && (
+                                        <p className="text-gray-500 text-center">... and {assessment.aptitude_questions.length - 2} more questions</p>
+                                    )}
                                 </div>
                             )}
                         </div>
                     )}
                 </div>
 
-                {/* Footer */}
+                {/* Footer CTA */}
                 <div className="mt-12 pt-8 border-t border-gray-800 text-center">
+                    <button
+                        onClick={handleTakeAssessment}
+                        className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-lg font-medium text-lg flex items-center gap-3 mx-auto mb-4 transition-colors"
+                    >
+                        <Play className="w-5 h-5" />
+                        Take Assessment
+                    </button>
                     <p className="text-gray-500 text-sm">
                         Generated with AI by SensAI
                     </p>
