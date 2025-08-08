@@ -1,8 +1,7 @@
-
 "use client";
 
 import { useState, useEffect } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import Image from "next/image";
 import {
     ChevronDown,
@@ -11,17 +10,22 @@ import {
     Target,
     BookOpen,
     AlertCircle,
-    Check
+    Check,
+    Play,
+    User,
+    Users
 } from "lucide-react";
 import { AssessmentResult } from "@/types/assessment";
 
 export default function AssessmentPreviewPage() {
     const params = useParams();
+    const router = useRouter();
     const assessmentId = params?.id as string;
     
     const [assessment, setAssessment] = useState<AssessmentResult | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [isStarting, setIsStarting] = useState(false);
     const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
         mcqs: true,
         saqs: false,
@@ -29,9 +33,16 @@ export default function AssessmentPreviewPage() {
         aptitude: false,
     });
 
+    // Add state for assessment start options
+    const [selectedCohort, setSelectedCohort] = useState<number | null>(null);
+    const [selectedCourse, setSelectedCourse] = useState<number | null>(null);
+    const [availableCohorts, setAvailableCohorts] = useState<Array<{id: number, name: string}>>([]);
+    const [availableCourses, setAvailableCourses] = useState<Array<{id: number, name: string}>>([]);
+
     useEffect(() => {
         if (assessmentId) {
             fetchAssessment();
+            fetchUserOptions();
         }
     }, [assessmentId]);
 
@@ -52,6 +63,62 @@ export default function AssessmentPreviewPage() {
             setError("Failed to load assessment");
         } finally {
             setIsLoading(false);
+        }
+    };
+
+    const fetchUserOptions = async () => {
+        try {
+            // Fetch user's available cohorts and courses
+            // This endpoint would need to be implemented in your backend
+            const [cohortsResponse, coursesResponse] = await Promise.all([
+                fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/user/cohorts`),
+                fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/user/courses`)
+            ]);
+
+            if (cohortsResponse.ok) {
+                const cohorts = await cohortsResponse.json();
+                setAvailableCohorts(cohorts);
+            }
+
+            if (coursesResponse.ok) {
+                const courses = await coursesResponse.json();
+                setAvailableCourses(courses);
+            }
+        } catch (error) {
+            console.error('Error fetching user options:', error);
+        }
+    };
+
+    const handleStartAssessment = async () => {
+        if (!assessment) return;
+
+        try {
+            setIsStarting(true);
+            
+            // Convert role assessment to assessment task format
+            const taskId = assessment.assessment_id; // Assuming the role assessment ID can be used as task ID
+            
+            // Build the URL with query parameters
+            const params = new URLSearchParams({
+                taskId: taskId.toString(),
+            });
+
+            if (selectedCohort) {
+                params.append('cohortId', selectedCohort.toString());
+            }
+
+            if (selectedCourse) {
+                params.append('courseId', selectedCourse.toString());
+            }
+
+            // Navigate to the assessment taking page
+            router.push(`/assessment/take?${params.toString()}`);
+
+        } catch (error) {
+            console.error('Error starting assessment:', error);
+            setError('Failed to start assessment');
+        } finally {
+            setIsStarting(false);
         }
     };
 
@@ -115,7 +182,7 @@ export default function AssessmentPreviewPage() {
                     </p>
 
                     {/* Stats */}
-                    <div className="flex items-center gap-6 text-sm text-gray-400">
+                    <div className="flex items-center gap-6 text-sm text-gray-400 mb-6">
                         <div className="flex items-center gap-2">
                             <BookOpen className="w-4 h-4" />
                             <span>{assessment.total_questions} questions</span>
@@ -128,6 +195,69 @@ export default function AssessmentPreviewPage() {
                             <Target className="w-4 h-4" />
                             <span>{assessment.difficulty_level}</span>
                         </div>
+                    </div>
+
+                    {/* Start Assessment Section */}
+                    <div className="bg-gray-900 border border-gray-800 rounded-lg p-6 mb-8">
+                        <h2 className="text-lg font-medium text-white mb-4">Start Assessment</h2>
+                        
+                        {/* Optional selections */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                            {availableCohorts.length > 0 && (
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-400 mb-2">
+                                        <Users className="w-4 h-4 inline mr-1" />
+                                        Cohort (optional)
+                                    </label>
+                                    <select
+                                        value={selectedCohort || ''}
+                                        onChange={(e) => setSelectedCohort(e.target.value ? parseInt(e.target.value) : null)}
+                                        className="w-full bg-gray-800 border border-gray-700 text-white rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    >
+                                        <option value="">Select a cohort</option>
+                                        {availableCohorts.map(cohort => (
+                                            <option key={cohort.id} value={cohort.id}>
+                                                {cohort.name}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                            )}
+
+                            {availableCourses.length > 0 && (
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-400 mb-2">
+                                        <BookOpen className="w-4 h-4 inline mr-1" />
+                                        Course (optional)
+                                    </label>
+                                    <select
+                                        value={selectedCourse || ''}
+                                        onChange={(e) => setSelectedCourse(e.target.value ? parseInt(e.target.value) : null)}
+                                        className="w-full bg-gray-800 border border-gray-700 text-white rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    >
+                                        <option value="">Select a course</option>
+                                        {availableCourses.map(course => (
+                                            <option key={course.id} value={course.id}>
+                                                {course.name}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                            )}
+                        </div>
+
+                        <button
+                            onClick={handleStartAssessment}
+                            disabled={isStarting}
+                            className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white px-6 py-3 rounded-md font-medium flex items-center gap-2 transition-colors"
+                        >
+                            <Play className="w-4 h-4" />
+                            {isStarting ? 'Starting...' : 'Start Assessment'}
+                        </button>
+                        
+                        <p className="text-sm text-gray-500 mt-2">
+                            Once started, you'll have {assessment.estimated_duration_minutes} minutes to complete the assessment.
+                        </p>
                     </div>
                 </div>
 

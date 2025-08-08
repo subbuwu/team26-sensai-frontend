@@ -18,6 +18,7 @@ import {
     Award,
     Zap,
     Share2,
+    Trash2,
 } from "lucide-react";
 import { AssessmentListItem } from "@/types/assessment";
 import { Header } from "@/components/layout/header";
@@ -92,6 +93,32 @@ export default function AssessmentsPage() {
             });
         } catch (error) {
             console.error('Failed to copy:', error);
+        }
+    };
+
+    const deleteAssessment = async (assessmentId: string) => {
+        try {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/role_assessment/${assessmentId}`, {
+                method: 'DELETE',
+            });
+
+            if (response.ok) {
+                setToast({
+                    show: true,
+                    message: "Assessment deleted successfully",
+                    type: 'success'
+                });
+                fetchAssessments();
+            } else {
+                throw new Error('Failed to delete assessment');
+            }
+        } catch (error) {
+            console.error('Error deleting assessment:', error);
+            setToast({
+                show: true,
+                message: "Failed to delete assessment",
+                type: 'error'
+            });
         }
     };
 
@@ -300,6 +327,15 @@ export default function AssessmentsPage() {
                                         className="px-3 py-1.5 bg-gray-800 text-white rounded hover:bg-gray-700 transition-colors"
                                     >
                                         <Share2 className="w-3 h-3" />
+                                    </button>
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            deleteAssessment(assessment.assessment_id);
+                                        }}
+                                        className="px-3 py-1.5 bg-gray-800 text-white rounded hover:bg-gray-700 transition-colors"
+                                    >
+                                        <Trash2 className="w-3 h-3" />
                                     </button>
                                 </div>
                             </div>
